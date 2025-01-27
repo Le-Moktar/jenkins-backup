@@ -2,11 +2,11 @@ pipeline {
     agent any
     environment {
         BRANCH_NAME = 'main'
-        GIT_URL =
+        GIT_URL = 'https://github.com/Le-Moktar/jenkins-backup.git'
         SOURCE_DIR = "/var/lib/jenkins"
         BACKUP_DIR = "/tmp"
         BACKUP_FILE = "jenkins_backup_${new Date().format('yyyyMMdd')}.tar.gz"
-        S3_BUCKET = "my-s3-backup-bucket"
+        S3_BUCKET = "my-wm-s3-backup-bucket"
     }
     stages {
         stage('Git checkout') {

@@ -3,6 +3,7 @@ pipeline {
     environment {
         BRANCH_NAME = 'main'
         GIT_URL = 'https://github.com/Le-Moktar/jenkins-backup.git'
+        TEMP_DIR = "/tmp/jenkins_backup_tmp"
         SOURCE_DIR = "/var/lib/jenkins"
         BACKUP_DIR = "/tmp"
         BACKUP_FILE = "jenkins_backup_${new Date().format('yyyyMMdd')}.tar.gz"
@@ -14,16 +15,28 @@ pipeline {
                 git branch: "${BRANCH_NAME}", url: "${GIT_URL}"
             }
         }
-        stage('Create Backup') {
+        stage('Prepare Backup Directory') {
             steps {
                 script {
-                    echo "Compressing Jenkins data directory..."
+                    echo "Creating a temporary backup directory..."
                     sh """
-                    tar -czf ${BACKUP_DIR}/${BACKUP_FILE} ${SOURCE_DIR}
+                    mkdir -p ${TEMP_DIR}
+                    rsync -a ${SOURCE_DIR}/ ${TEMP_DIR}/
                     """
                 }
             }
         }
+        stage('Create Backup') {
+            steps {
+                script {
+                    echo "Compressing temporary backup directory..."
+                    sh """
+                    tar --warning=no-file-changed -czf ${BACKUP_DIR}/${BACKUP_FILE} -C ${TEMP_DIR} .
+                    """
+                }
+            }
+        }
+        
         stage('Upload to S3') {
             steps {
                 script {
@@ -39,6 +52,7 @@ pipeline {
                 script {
                     echo "Cleaning up local backup file..."
                     sh """
+                    rm -rf ${TEMP_DIR}
                     rm -f ${BACKUP_DIR}/${BACKUP_FILE}
                     """
                 }
